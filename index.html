@@ -692,5 +692,83 @@ function observeReveals() {
 observeReveals();
 </script>
 
+<script>
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  var target = document.getElementById('page-' + pageId);
+  if (!target) return;
+  target.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  var activeNav = document.querySelector('.nav-item[data-page="' + pageId + '"]');
+  if (activeNav) activeNav.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(function() {
+    target.querySelectorAll('.reveal').forEach(function(el) {
+      el.classList.remove('visible');
+      void el.offsetWidth;
+    });
+    observeReveals();
+  }, 50);
+  document.querySelector('.sidebar').classList.remove('open');
+  document.querySelector('.sidebar-overlay').classList.remove('active');
+}
+
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.querySelector('.sidebar-overlay').classList.toggle('active');
+}
+
+function observeReveals() {
+  var reveals = document.querySelectorAll('.page.active .reveal:not(.visible)');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(function(el) { observer.observe(el); });
+}
+
+observeReveals();
+
+const contactForm = document.getElementById("contactForm");
+const formStatus = document.getElementById("formStatus");
+
+if (contactForm) {
+  contactForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending...";
+    formStatus.textContent = "";
+
+    const formData = Object.fromEntries(new FormData(contactForm).entries());
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      formStatus.textContent = "Message sent successfully.";
+      contactForm.reset();
+    } catch (err) {
+      formStatus.textContent = "Sorry, your message could not be sent.";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Send Message";
+    }
+  });
+}
+</script>
 </body>
 </html>
